@@ -50,7 +50,8 @@ var p;
             .style("fill", "#555555")
             .style("opacity", 0.3)
             .style("pointer-events", "all")
-            .on("mousewheel", zoomed);
+            .on("mousewheel", zoomed)
+            .on("click", clicked);
 
         var viewport = minimap.append("rect")
             .attr("id", "viewport")
@@ -60,8 +61,7 @@ var p;
             .attr("data-scale", 1)
             .style("fill", "#555555")
             .style("stroke", "#AA2222")
-            .style("opacity", 0.5)
-            .style("stroke-opacity", 1)
+            .style("fill-opacity", 0.5)
             .on("mousewheel", zoomed)
             .call(d3.drag()
                 .on("start", function() {
@@ -114,6 +114,20 @@ p = projection;
                 .attr("fill", "#333333");
         });
 
+        // Called when outside of viewport is clicked
+        function clicked() {
+
+            var scale = Number(viewport.attr("data-scale"));
+            var scaled_width = width / 5 * viewportScale;
+            var scaled_height = height / 5 * viewportScale;
+
+            var offsetX = d3.mouse(zoomer.node())[0] - (scaled_width / 2);
+            var offsetY = d3.mouse(zoomer.node())[1] - (scaled_height / 2);
+
+            moveMap(offsetX, offsetY, scale, 300);
+
+        }
+
         // Called on drag event
         function dragged() {
             console.log("dragging!");
@@ -125,11 +139,6 @@ p = projection;
 
             var X = Number(viewport.attr("x"));
             var Y = Number(viewport.attr("y"));
-
-
-            viewport
-                .attr("x", X + offsetX)
-                .attr("y", Y + offsetY);
 
             var scale = Number(viewport.attr("data-scale"));
 
@@ -153,9 +162,6 @@ p = projection;
                 transform = 1.2;
             }
 
-
-            // Lets just get the viewport scale right
-
             viewportWidth = Number(viewport.attr("width"));
             viewportHeight = Number(viewport.attr("height"));
             viewportX = Number(viewport.attr("x"));
@@ -166,8 +172,8 @@ p = projection;
             viewportScale = viewportScale < 0.2 ? 0.2 : viewportScale;
 
             var centre = {
-                x: viewportX + (viewportWidth / 2),
-                y: viewportY + (viewportHeight / 2)
+                x: d3.mouse(zoomer.node())[0],
+                y: d3.mouse(zoomer.node())[1]
             };
 
             console.log(viewportScale);
@@ -194,10 +200,27 @@ p = projection;
             moveMap(offsetX, offsetY, viewportScale);
         }
 
-        function moveMap(x, y, scale) {
+        function moveMap(x, y, scale, transition) {
 
-            var x = String(-x / scale * 5);
-            var y = String(-y / scale * 5);
+            transition = typeof(transition) === "undef" ? 0 : transition;
+
+            x = x + (width/5 * scale) > width/5 ? width/5 - (width/5 * scale) : x;
+            x = x < 0 ? 0 : x;
+
+            console.log(x, width/5, width/5 - (width/5 * scale));
+
+
+            y = y + (height/5 * scale) > height/5 ? height/5 - (height/5 * scale) : y;
+            y = y < 0 ? 0 : y;
+
+            viewport
+                .transition()
+                    .duration(transition)
+                    .attr("x", x)
+                    .attr("y", y);
+
+            x = String(-x / scale * 5);
+            y = String(-y / scale * 5);
 
             features.attr("transform", "translate(" + x + " " + y + ")scale(" + String(1 / scale) + ")");
         }

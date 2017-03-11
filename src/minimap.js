@@ -10,8 +10,6 @@
 
 let Minimap = (function() {
 
-
-
     // Constructor for map object
     function Map(width, height, scale, padding) {
 
@@ -171,22 +169,20 @@ let Minimap = (function() {
 
             self.zoom = viewportScale;
 
-            var centre = {
+            let centre = {
                 x: d3.mouse(lamina.node())[0],
                 y: d3.mouse(lamina.node())[1]
             };
 
-            var scaled_width = self.width / self.scale * viewportScale;
-            var scaled_height = self.height / self.scale * viewportScale;
+            let scaled_width = self.width / self.scale * viewportScale;
+            let scaled_height = self.height / self.scale * viewportScale;
 
-            var offsetX = centre.x - (scaled_width / 2);
-            var offsetY = centre.y - (scaled_height / 2);
+            let offsetX = centre.x - (scaled_width / 2);
+            let offsetY = centre.y - (scaled_height / 2);
 
 
             viewport.attr("width", scaled_width)
-                .attr("height", scaled_height)
-                .attr("x", offsetX)
-                .attr("y", offsetY);
+                .attr("height", scaled_height);
 
             self.moveMap(offsetX, offsetY, viewportScale);
         }
@@ -251,6 +247,27 @@ let Minimap = (function() {
                 mainFeatures
                     .attr("transform", "translate(" + x + " " + y + ")scale(" + String(1 / zoomed) + ")");
             }
+
+        }
+
+        // Zoom and translate the map and viewport to make it more obvious
+        // how to use it
+        this.jaunty = function() {
+
+            self.zoom = 0.5;
+
+            let x = self.width / self.scale * 0.25;
+            let y = self.height / self.scale * 0.25;
+
+            let scaled_width = self.width / self.scale * self.zoom;
+            let scaled_height = self.height / self.scale * self.zoom;
+
+            self.miniMap.select(".viewport")
+                .attr("width", scaled_width)
+                .attr("height", scaled_height);
+
+            self.moveMap(x, y, self.zoom);
+
 
         }
 

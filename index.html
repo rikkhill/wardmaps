@@ -8,10 +8,14 @@
 
     <style type="text/css">
         .region.selected {
-            fill: #aa6666;
+            fill: #CC6666;
         }
 
-        #viewport.selected {
+        .viewport:hover {
+            cursor: move;
+        }
+
+        .viewport.selected {
             stroke: #222222;
             stroke-width: 2;
         }
@@ -40,8 +44,17 @@ d3.json("./data/london_ward_topology.json", function(error, regions) {
 
     myMap.mainMap.selectAll(".region")
         .on("click", function(d) {
-            console.log(d, this);
+
+            myMap.mainMap.selectAll(".region")
+                .classed("selected", false);
+
+            d3.select(this)
+                .classed("selected", true);
+
+            console.log(d);
         } );
+
+    myMap.jaunty();
 
 });
 

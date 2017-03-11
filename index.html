@@ -4,9 +4,10 @@
     <title>Ward Maps Example</title>
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script type="text/javascript" src="./src/minimap.js"></script>
 
     <style type="text/css">
-        .ward.selected {
+        .region.selected {
             fill: #aa6666;
         }
 
@@ -22,209 +23,27 @@
     </style>
 </head>
 <body>
+
 <script>
-        var width = 800, height = 600, padding = 20;
 
-        var svg = d3.select("body").append("svg")
-            .attr("class", "container")
-            .attr("width", width)
-            .attr("height", height);
+let myMap = Minimap.map(800, 600, 5, 20);
 
-        var features = svg.append("g");
+d3.select("body").node().appendChild(myMap.mainMap.node());
+d3.select("body").node().appendChild(myMap.miniMap.node());
 
-        var minimap = svg.append("g")
-            .attr("class", "minimap");
+d3.json("./data/london_ward_topology.json", function(error, regions) {
+    if(error) { return console.error(error) };
 
-        var mini_container = minimap.append("g");
+    myMap.populate(regions);
 
-        var zoomBehaviour = d3.zoom()
-            .scaleExtent([1, 4])
-            .on("zoom", zoomed)
+    console.log(myMap.mainMap.selectAll(".region"));
 
-var p;
+    myMap.mainMap.selectAll(".region")
+        .on("click", function(d) {
+            console.log(d, this);
+        } );
 
-        var zoomer = minimap.append("rect")
-            .attr("class", "overlay")
-            .attr("width", width/5)
-            .attr("height", height/5)
-            .style("fill", "#555555")
-            .style("opacity", 0.3)
-            .style("pointer-events", "all")
-            .on("mousewheel", zoomed)
-            .on("click", clicked);
-
-        var viewport = minimap.append("rect")
-            .attr("id", "viewport")
-            .attr("class", "window")
-            .attr("width", width/5)
-            .attr("height", height/5)
-            .attr("data-scale", 1)
-            .style("fill", "#555555")
-            .style("stroke", "#AA2222")
-            .style("fill-opacity", 0.5)
-            .on("mousewheel", zoomed)
-            .call(d3.drag()
-                .on("start", function() {
-                    d3.select(this).classed("selected", true);
-                })
-                .on("drag", dragged)
-                .on("end", function() {
-                    d3.select(this).classed("selected", false);
-                }));
-
-        d3.json("./data/london_ward_topology.json", function(error, london_wards) {
-            if(error) { return console.error(error) };
-
-            var ward_geo = topojson.feature(london_wards, london_wards.objects.features);
-
-            var wards = ward_geo.features;
-
-            console.log("Loading topology");
-
-            console.log(topojson.bbox(london_wards));
-
-
-            var projection = d3.geoMercator()
-                .fitExtent([[padding, padding], [width - padding, height - padding]], ward_geo);
-
-p = projection;
-
-            var path = d3.geoPath().projection(projection);
-
-            var mini_projection = d3.geoMercator()
-                .fitExtent([[(padding/5), (padding/5)], [width/5 - (padding/5), height/5 - (padding/5)]], ward_geo);
-
-            var mini_path = d3.geoPath().projection(mini_projection);
-
-
-            features.selectAll(".ward")
-                .data(wards).enter()
-                .append("path")
-                .attr("d", path)
-                .attr("fill", "#999999")
-                .on("click", function(d) {
-                    console.log(d);
-                    console.log(this);
-                }, true);
-
-            mini_container.selectAll(".miniward")
-                .data(wards).enter()
-                .append("path")
-                .attr("d", mini_path)
-                .attr("fill", "#333333");
-        });
-
-        // Called when outside of viewport is clicked
-        function clicked() {
-
-            var scale = Number(viewport.attr("data-scale"));
-            var scaled_width = width / 5 * viewportScale;
-            var scaled_height = height / 5 * viewportScale;
-
-            var offsetX = d3.mouse(zoomer.node())[0] - (scaled_width / 2);
-            var offsetY = d3.mouse(zoomer.node())[1] - (scaled_height / 2);
-
-            moveMap(offsetX, offsetY, scale, 300);
-
-        }
-
-        // Called on drag event
-        function dragged() {
-            console.log("dragging!");
-
-            var offsetX = d3.event.dx;
-            var offsetY = d3.event.dy;
-
-            // TODO: guard on viewport boundaries
-
-            var X = Number(viewport.attr("x"));
-            var Y = Number(viewport.attr("y"));
-
-            var scale = Number(viewport.attr("data-scale"));
-
-            var translateX = String(- (X + offsetX) * 5);
-            var translateY = String(- (Y + offsetY) * 5);
-
-            console.log(translateX, translateY);
-
-            moveMap(X + offsetX, Y + offsetY, scale);
-        }
-
-        function zoomed() {
-            console.log("ZOOMED!");
-            console.log(event);
-
-            let transform = 1;
-
-            if(event.deltaY < 0) {
-                transform = 0.8;
-            } else {
-                transform = 1.2;
-            }
-
-            viewportWidth = Number(viewport.attr("width"));
-            viewportHeight = Number(viewport.attr("height"));
-            viewportX = Number(viewport.attr("x"));
-            viewportY = Number(viewport.attr("y"));
-            viewportScale = Number(viewport.attr("data-scale")) * transform;
-
-            viewportScale = viewportScale > 1 ? 1 : viewportScale;
-            viewportScale = viewportScale < 0.2 ? 0.2 : viewportScale;
-
-            var centre = {
-                x: d3.mouse(zoomer.node())[0],
-                y: d3.mouse(zoomer.node())[1]
-            };
-
-            console.log(viewportScale);
-
-            var scaled_width = width / 5 * viewportScale;
-            var scaled_height = height / 5 * viewportScale;
-
-            console.log(scaled_width, scaled_height);
-
-
-            //scaled_width = scaled_width < width / 5 ? scaled_width : width / 5;
-            //scaled_height = scaled_height < height / 5 ? scaled_height : height / 5;
-
-            var offsetX = centre.x - (scaled_width / 2);
-            var offsetY = centre.y - (scaled_height / 2);
-
-
-            viewport.attr("width", scaled_width)
-                .attr("height", scaled_height)
-                .attr("x", offsetX)
-                .attr("y", offsetY)
-                .attr("data-scale", viewportScale);
-
-            moveMap(offsetX, offsetY, viewportScale);
-        }
-
-        function moveMap(x, y, scale, transition) {
-
-            transition = typeof(transition) === "undef" ? 0 : transition;
-
-            x = x + (width/5 * scale) > width/5 ? width/5 - (width/5 * scale) : x;
-            x = x < 0 ? 0 : x;
-
-            console.log(x, width/5, width/5 - (width/5 * scale));
-
-
-            y = y + (height/5 * scale) > height/5 ? height/5 - (height/5 * scale) : y;
-            y = y < 0 ? 0 : y;
-
-            viewport
-                .transition()
-                    .duration(transition)
-                    .attr("x", x)
-                    .attr("y", y);
-
-            x = String(-x / scale * 5);
-            y = String(-y / scale * 5);
-
-            features.attr("transform", "translate(" + x + " " + y + ")scale(" + String(1 / scale) + ")");
-        }
-
+});
 
 
     </script>

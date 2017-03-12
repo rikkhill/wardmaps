@@ -28,10 +28,14 @@
             border: 1pt solid black;
         }
 
+        #notifications {
+            font-family: sans-serif;
+        }
+
     </style>
 </head>
 <body>
-
+<div id="notifications" height="10px" width="600px">&nbsp;</div>
 <script>
 
 let myMap = Minimap.map(800, 600, 5, 20);
@@ -55,7 +59,7 @@ d3.json("./data/london_ward_topology.json", function(error, regions) {
             d3.select(this)
                 .classed("selected", true);
 
-            console.log(d);
+            d3.select("#notifications").text(d.properties.lau215nm);
         } );
 
     myMap.jaunty();

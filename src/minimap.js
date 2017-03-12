@@ -67,7 +67,7 @@ let Minimap = (function() {
             .style("fill", "#777777")
             .style("stroke", "#AA2222")
             .style("fill-opacity", 0.5)
-            .on("mousewheel", miniMapZoomed)
+            .on("wheel", miniMapZoomed)
             .call(d3.drag()
                 .on("start", function() {
                     d3.select(this).classed("selected", true);
@@ -148,7 +148,7 @@ let Minimap = (function() {
 
             let transform = 1;
 
-            if(event.deltaY < 0) {
+            if(d3.event.deltaY < 0) {
                 transform = 0.8;
             } else {
                 transform = 1.2;
